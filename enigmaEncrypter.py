@@ -131,7 +131,8 @@ def userSetup():
 	plugboardPairs=[]	
 	for i in range(10):
 		pair=raw_input('Enter pair #{}:'.format(str(i+1)))
-		while type(pair) is not tuple or type(pair[0]) is not str or type(pair[1]) is not str:
+		pair=tuple(pair.split(','))
+		while pair[0] not in letters or pair[1] not in letters:
 			pair=raw_input('Invalid entry.  Please enter a tuple of letters.')
 		plugboardPairs.append(pair)
 	print 'Initializing your Enigma machine...'
