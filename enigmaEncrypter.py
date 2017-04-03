@@ -68,7 +68,7 @@ class enigmaMachine(object):
 		self.rotors={}
 		self.plugboardMap={}
 		self.reflector={}
-		self.doubleIncrementNextRound=False
+		self.doubleStep=False
 		for i in range(3):
 			self.rotors[i]=rotor(nameList[i],offsetList[i],ringSettings[i])
 		for pair in plugboardPairs:
@@ -96,14 +96,11 @@ class enigmaMachine(object):
 		return letter
 	def increment(self):
 		self.rotors[0].increment()
-		if self.doubleIncrementNextRound==True:
+		if chr(ord(self.rotors[1].getPosition())+1) in self.rotors[1].notches or chr(ord(self.rotors[1].getPosition())-25) in self.rotors[1].notches:
 			self.rotors[1].increment()
-		self.doubleIncrementNextRound=False
+			self.rotors[2].increment()
 		if self.rotors[0].getPosition() in self.rotors[0].notches:
 			self.rotors[1].increment()
-			if self.rotors[1].getPosition() in self.rotors[1].notches:
-				self.rotors[2].increment()
-				self.doubleIncrementNextRound=True
 
 def userSetup():
 	print 'A number of selections must be made to set up an Enigma machine'
