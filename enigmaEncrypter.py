@@ -12,95 +12,25 @@ def switch(x):
 	else:
 		return None
 
-class rotor(object):
-	def __init__(self,name,position,ring):
-		if name not in rotorSpecs.keys():
-			raise RuntimeError('Invalid rotor specification.')
-		if position not in letters:
-			raise RuntimeError('Invalid rotor initialization.')
-		self.ring=switch(ring)
-		self.position=switch(position)
-		self.permute={'forward':{},'reverse':{}}
-		for inputContact, outputContact in zip(letters,rotorSpecs[name]['perm']):
-			self.permute['forward'][switch(inputContact)]=switch(outputContact)
-			self.permute['reverse'][switch(outputContact)]=switch(inputContact)
-		self.notches=rotorSpecs[name]['notches'] #bugged???
-	def encrypt(self, direction, letter):
-		if letter not in letters:
-			raise RuntimeError('Invalid letter provided to rotorCrypt.')
-		if direction not in ['forward','reverse']:
-			raise RuntimeError('Invalid encryption direction passed to rotorCrypt.')
-		retVal=(self.permute[direction][(switch(letter)+self.position-self.ring)%26]-self.position+self.ring)%26
-		return switch(retVal)
-	def getPosition(self):
-		return switch(self.position)
-	def increment(self):
-		self.position+=1
-
-def checkPlugs(plugboardPairs):
-	tempLetters=letters
-	if len(plugboardPairs)>10: return False
-	for pair in plugboardPairs:
-		if type(pair) is not tuple: return False
-		if len(pair)!=2: return False
-		if pair[0] not in letters: return False
-		if pair[1] not in letters: return False
-		tempLetters=tempLetters.replace(pair[0],'').replace(pair[1],'')
-	if len(tempLetters)!=26-2*len(plugboardPairs): return False
-	return True
-
-def checkSettings(nameList,offsetList,reflectorName,plugboardPairs,ringSettings):
+def validateSettings(nameList,offsetList,reflectorName,plugboardPairs,ringSettings):
 	if not all(map(lambda x: x in rotorSpecs.keys(), nameList)) or len(nameList)!=3:
 		raise RuntimeError('Invalid rotor specifications.')
 	if not all(map(lambda x: x in letters, offsetList)) or len(offsetList)!=3:
 		raise RuntimeError('Invalid rotor initializations.')
 	if not all(map(lambda x: x in letters, ringSettings)) or len(ringSettings)!=3:
 		raise RuntimeError('Invalid ring initializations.')
-	if not checkPlugs(plugboardPairs):
-		raise RuntimeError('Invalid plugboard specification.')
 	if not reflectorName in reflectorSpecs.keys():
 		raise RuntimeError('Invalid reflector specification.')
+	tempLetters=letters
+	if len(plugboardPairs)>10: raise RuntimeError('Invalid plugboard specification.')
+	for pair in plugboardPairs:
+		if type(pair) is not tuple: RuntimeError('Invalid plugboard specification.')
+		if len(pair)!=2: RuntimeError('Invalid plugboard specification.')
+		if pair[0] not in letters: RuntimeError('Invalid plugboard specification.')
+		if pair[1] not in letters: RuntimeError('Invalid plugboard specification.')
+		tempLetters=tempLetters.replace(pair[0],'').replace(pair[1],'')
+	if len(tempLetters)!=26-2*len(plugboardPairs): RuntimeError('Invalid plugboard specification.')
 	return None
-
-class enigmaMachine(object):
-	def __init__(self,nameList,offsetList,reflectorName,plugboardPairs,ringSettings):
-		checkSettings(nameList,offsetList,reflectorName,plugboardPairs,ringSettings)
-		self.rotors={}
-		self.plugboardMap={}
-		self.reflector={}
-		self.doubleStep=False
-		for i in range(3):
-			self.rotors[i]=rotor(nameList[i],offsetList[i],ringSettings[i])
-		for pair in plugboardPairs:
-			self.plugboardMap[pair[0]]=pair[1]
-			self.plugboardMap[pair[1]]=pair[0]
-		for letter, reflection in zip(letters,reflectorSpecs[reflectorName]):
-			self.reflector[letter]=reflection
-	def getPositions(self):
-		currentPositions=''
-		for i in range(3):
-			currentPositions+=self.rotors[i].getPosition()
-		return currentPositions	
-	def encrypt(self,letter,debug=False):
-		if letter not in letters: raise RuntimeError('Invalid letter provided to crypt.')
-		self.increment()
-		if letter in self.plugboardMap.keys():
-			letter=self.plugboardMap[letter]
-		for i in range(3):
-			letter=self.rotors[i].encrypt('forward',letter)
-		letter=self.reflector[letter]
-		for j in range(2,-1,-1):
-			letter=self.rotors[j].encrypt('reverse',letter)
-		if letter in self.plugboardMap.keys():
-			letter=self.plugboardMap[letter]		
-		return letter
-	def increment(self):
-		self.rotors[0].increment()
-		if chr(ord(self.rotors[1].getPosition())+1) in self.rotors[1].notches or chr(ord(self.rotors[1].getPosition())-25) in self.rotors[1].notches:
-			self.rotors[1].increment()
-			self.rotors[2].increment()
-		if self.rotors[0].getPosition() in self.rotors[0].notches:
-			self.rotors[1].increment()
 
 def userSetup():
 	print 'A number of selections must be made to set up an Enigma machine'
@@ -187,6 +117,63 @@ def verifyEnigma():
 			test[l]['Cipher']=encrypt(test[l]['Machine'],'AAAAA',True)
 			return False
 	return True
+
+class rotor(object):
+	def __init__(self,name,position,ring):
+		self.ring=switch(ring)
+		self.position=switch(position)
+		self.permute={'forward':{},'reverse':{}}
+		for inputContact, outputContact in zip(letters,rotorSpecs[name]['perm']):
+			self.permute['forward'][switch(inputContact)]=switch(outputContact)
+			self.permute['reverse'][switch(outputContact)]=switch(inputContact)
+		self.notches=rotorSpecs[name]['notches'] #bugged???
+	def encrypt(self, direction, letter):
+		retVal=(self.permute[direction][(switch(letter)+self.position-self.ring)%26]-self.position+self.ring)%26
+		return switch(retVal)
+	def getPosition(self):
+		return switch(self.position)
+	def increment(self):
+		self.position+=1
+
+class enigmaMachine(object):
+	def __init__(self,nameList,offsetList,reflectorName,plugboardPairs,ringSettings):
+		validateSettings(nameList,offsetList,reflectorName,plugboardPairs,ringSettings)
+		self.rotors={}
+		self.plugboardMap={}
+		self.reflector={}
+		self.doubleStep=False
+		for i in range(3):
+			self.rotors[i]=rotor(nameList[i],offsetList[i],ringSettings[i])
+		for pair in plugboardPairs:
+			self.plugboardMap[pair[0]]=pair[1]
+			self.plugboardMap[pair[1]]=pair[0]
+		for letter, reflection in zip(letters,reflectorSpecs[reflectorName]):
+			self.reflector[letter]=reflection
+	def getPositions(self):
+		currentPositions=''
+		for i in range(3):
+			currentPositions+=self.rotors[i].getPosition()
+		return currentPositions	
+	def encrypt(self,letter,debug=False):
+		if letter not in letters: raise RuntimeError('Invalid input provided to encrypt.')
+		self.increment()
+		if letter in self.plugboardMap.keys():
+			letter=self.plugboardMap[letter]
+		for i in range(3):
+			letter=self.rotors[i].encrypt('forward',letter)
+		letter=self.reflector[letter]
+		for j in range(2,-1,-1):
+			letter=self.rotors[j].encrypt('reverse',letter)
+		if letter in self.plugboardMap.keys():
+			letter=self.plugboardMap[letter]		
+		return letter
+	def increment(self):
+		self.rotors[0].increment()
+		if chr(ord(self.rotors[1].getPosition())+1) in self.rotors[1].notches or chr(ord(self.rotors[1].getPosition())-25) in self.rotors[1].notches:
+			self.rotors[1].increment()
+			self.rotors[2].increment()
+		if self.rotors[0].getPosition() in self.rotors[0].notches:
+			self.rotors[1].increment()
 		
 ############################################################
 
