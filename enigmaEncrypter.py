@@ -177,24 +177,29 @@ class enigmaMachine(object):
 		
 ############################################################
 
-print 'Welcome to the Enigma encryption system. Validating build...'
-valid=verifyEnigma()
-if not valid:
-	print 'DEBUG - Debugging complete.'
-	print 'Exiting program.'
-	sys.exit()
-nextStep='2'
-while nextStep!='1':
-	if nextStep=='2':
-		machine, settings = userSetup()
-		print "Enigma machine succesfully initialized.  Ready for encryption."
-	elif nextStep=='3':
-		print 'Restoring machine setttings...'
-		machine = enigmaMachine(*settings)
-		print "Enigma rotors returned to starting positions.  Ready for encryption."
-	plaintext = raw_input('Enter the plaintext message you would like to encrypt: ')
-	plaintext=plaintext.translate(None, string.punctuation).upper().replace(' ','')
-	ciphertext = encrypt(machine,plaintext)
-	print 'Encrypted text: '+ciphertext
-	print '1 to exit, 2 to return to machine setup, 3 to reset rotors, or 4 to continue:'
-	nextStep=raw_input('$: ')
+def main():
+	print 'Welcome to the Enigma encryption system. Validating build...'
+	valid=verifyEnigma()
+	if not valid:
+		print 'DEBUG - Debugging complete.'
+		print 'Exiting program.'
+		sys.exit()
+	nextStep='2'
+	while nextStep!='1':
+		if nextStep=='2':
+			machine, settings = userSetup()
+			print "Enigma machine succesfully initialized.  Ready for encryption."
+		elif nextStep=='3':
+			print 'Restoring machine setttings...'
+			machine = enigmaMachine(*settings)
+			print "Enigma rotors returned to starting positions.  Ready for encryption."
+		plaintext = raw_input('Enter the plaintext message you would like to encrypt: ')
+		plaintext=plaintext.translate(None, string.punctuation).upper().replace(' ','')
+		ciphertext = encrypt(machine,plaintext)
+		print 'Encrypted text: '+ciphertext
+		print '1 to exit, 2 to return to machine setup, 3 to reset rotors, or 4 to continue:'
+		nextStep=raw_input('$: ')
+
+		
+if __name__ == "__main__":
+      main()
